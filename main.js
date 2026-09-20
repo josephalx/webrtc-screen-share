@@ -8,14 +8,31 @@ const path = require("path");
 
 const app = express();
 
-// Browsers only allow screen capture over HTTPS or on localhost. With a
-// certificate present we serve HTTPS, which lets any device on the network
-// broadcast rather than only this machine. Without one we fall back to plain
-// HTTP, which is still fine for watching. Run `npm run cert` to create one.
-const certDir = path.join(__dirname, "certs");
-const keyPath = path.join(certDir, "key.pem");
-const certPath = path.join(certDir, "cert.pem");
-const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
+// Browsers only allow screen capture over HTTPS or on localhost, so serving
+// HTTPS is what lets any device on the network broadcast rather than only this
+// machine. A self-signed certificate is created on first start; if that is not
+// possible (no openssl) we fall back to plain HTTP, which still works for
+// watching. Delete certs/ and set NO_HTTPS=1 to stay on HTTP.
+const { generateCert, certExists, keyPath, certPath } = require("./scripts/generate-cert");
+
+let useHttps = false;
+
+if (process.env.NO_HTTPS) {
+    console.log("NO_HTTPS is set, serving plain HTTP.");
+} else if (certExists()) {
+    useHttps = true;
+} else {
+    try {
+        const { ips } = generateCert();
+        console.log("No certificate found, generated a self-signed one for:");
+        console.log(`  localhost, 127.0.0.1${ips.length ? ", " + ips.join(", ") : ""}`);
+        console.log("Browsers will warn that it is untrusted. Accept it once per device.\n");
+        useHttps = true;
+    } catch (error) {
+        console.warn("Could not generate a certificate, falling back to HTTP.");
+        console.warn(`  ${error.message.split("\n")[0]}`);
+    }
+}
 
 const main = useHttps
     ? https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app)
