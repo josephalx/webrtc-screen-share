@@ -21,7 +21,7 @@
   "bin": "main.js",
   "scripts": {
     "build": "webpack",
-    "start": "dist/bundle.js"
+    "start": "node main.js"
   },
   "keywords": [],
   "author": "",

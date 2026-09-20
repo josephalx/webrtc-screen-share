@@ -63,11 +63,21 @@ io.on("connection", (socket) => {
         io.to(id).emit("candidate", socket.id, candidate);
     });
 
-    // Handle disconnect event
+    // Handle disconnect event. A leaving viewer and a leaving broadcaster mean
+    // very different things, so they get separate events: telling every viewer
+    // the broadcast ended because some other viewer closed their tab is wrong.
     socket.on("disconnect", () => {
         console.log("Client disconnected:", socket.id);
-        delete broadcasters[socket.id];
-        socket.broadcast.emit("broadcaster-disconnect", socket.id);
+
+        if (broadcasters[socket.id]) {
+            delete broadcasters[socket.id];
+            socket.broadcast.emit("broadcaster-disconnect", socket.id);
+        } else {
+            // Let broadcasters tear down the peer connection they held for this viewer.
+            Object.values(broadcasters).forEach((broadcasterSocket) => {
+                broadcasterSocket.emit("watcher-disconnect", socket.id);
+            });
+        }
     });
 });
 
@@ -77,8 +87,10 @@ app.get("/ip", (req, res) => {
     res.json({ ip: ips[0] || null, ips });
 });
 
-main.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+main.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
     getLocalIPv4Addresses().forEach(ip =>
-        console.log(`Other devices on this network: http://${ip}:3000`));
+        console.log(`Other devices on this network: http://${ip}:${PORT}`));
 });
