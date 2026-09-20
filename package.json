@@ -2,10 +2,7 @@
   "name": "webrtc-screen-share",
   "target": "node",
   "pkg": {
-    "scripts": [
-      "*.js",
-      "scripts/*.js"
-    ],
+    "scripts": "*.js",
     "assets": [
       "./public/index.html"
     ],
@@ -24,8 +21,7 @@
   "bin": "main.js",
   "scripts": {
     "build": "webpack",
-    "start": "node main.js",
-    "cert": "node scripts/generate-cert.js"
+    "start": "node main.js"
   },
   "keywords": [],
   "author": "",

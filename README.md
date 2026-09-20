@@ -30,12 +30,11 @@ A simple WebRTC application for screen sharing between two or more web browsers.
     npm start
     ```
 
-    The first run creates a self-signed certificate so the app can be served
-    over HTTPS, then prints every address it is reachable on:
+    On startup it prints every address the app is reachable on:
 
     ```
-    Server running on https://localhost:3000
-    Other devices on this network: https://192.168.1.42:3000
+    Server running on http://localhost:3000
+    Other devices on this network: http://192.168.1.42:3000
     ```
 
     To use a different port, set `PORT`:
@@ -44,13 +43,12 @@ A simple WebRTC application for screen sharing between two or more web browsers.
     PORT=8080 npm start
     ```
 
-2.  Open one of those addresses. Your browser will warn that the certificate is
-    untrusted — choose "Advanced" and proceed. See [HTTPS](#https) for why.
+2.  On the machine whose screen you want to share, open `http://localhost:3000`.
 
-    > Screen capture only works in a secure context. Over HTTPS that is any
-    > address, so you can share from any device. If you turn HTTPS off with
-    > `NO_HTTPS=1`, only `http://localhost:3000` on the host machine can start
-    > a share, though other devices can still watch.
+    > **Use `localhost` here, not the network address.** Browsers only allow
+    > screen capture in a secure context, which means HTTPS or `localhost`. If
+    > you open the `192.168.x.x` address instead, "Start Sharing" will refuse to
+    > run. Watching a stream has no such restriction.
 
 3.  Click **Start Sharing** and choose a screen or window.
 
@@ -59,47 +57,6 @@ A simple WebRTC application for screen sharing between two or more web browsers.
     same network.
 
 5.  Click **Watch Stream** to view the shared screen.
-
-### HTTPS
-
-Browsers only treat `localhost` as secure over plain HTTP, so HTTPS is what
-allows devices other than the host to start a share. The first `npm start`
-creates a self-signed certificate automatically — there is nothing to run
-first:
-
-```
-No certificate found, generated a self-signed one for:
-  localhost, 127.0.0.1, 192.168.1.42
-Browsers will warn that it is untrusted. Accept it once per device.
-
-Server running on https://localhost:3000
-Other devices on this network: https://192.168.1.42:3000
-```
-
-It is written to `certs/` and reused on every later start. The directory is
-gitignored; it holds a private key and should never be committed.
-
-Two things to expect:
-
--   **Every browser will warn that the certificate is untrusted.** That is
-    normal for a self-signed certificate — nobody vouches for it but you.
-    Choose "Advanced" and proceed; the page is then a fully secure context and
-    screen capture works. You only do this once per device.
--   **The app is served over `https://`.** Plain HTTP will not answer on that
-    port.
-
-| To do this | Run |
-|---|---|
-| Reissue the certificate, e.g. after your LAN IP changed | `npm run cert` |
-| Start over from scratch | `rm -rf certs && npm start` |
-| Stay on plain HTTP | `NO_HTTPS=1 npm start` |
-
-If openssl is not installed, startup says so and falls back to HTTP rather than
-failing; you can still watch streams, and still share from the host machine.
-
-On iOS, Safari may refuse screen capture even after you accept the warning. If
-you need that, install and trust the certificate in Settings, or use the ngrok
-route below, which gives you a properly trusted certificate.
 
 ### Sharing across different networks (using ngrok)
 
@@ -137,8 +94,7 @@ This application uses WebRTC (Web Real-Time Communication) to establish a peer-t
 
 ## Notes
 
--   Screen sharing requires user permission, and can only be started from
-    `localhost` or over HTTPS. See [HTTPS](#https).
+-   Screen sharing requires user permission, and can only be started from `localhost` or over HTTPS.
 -   No internet connection is required. The socket.io client is served by the
     app itself, so it works on an isolated local network.
 -   **There is no authentication.** Anyone who can reach the port can click

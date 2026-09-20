@@ -135,6 +135,3 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .idea
-
-# Self-signed certificates are generated per machine and contain a private key.
-certs/

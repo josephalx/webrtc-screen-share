@@ -1,43 +1,11 @@
 const express = require("express");
 const http = require("http");
-const https = require("https");
-const fs = require("fs");
 const socketIo = require("socket.io");
 const os = require("os");
 const path = require("path");
 
 const app = express();
-
-// Browsers only allow screen capture over HTTPS or on localhost, so serving
-// HTTPS is what lets any device on the network broadcast rather than only this
-// machine. A self-signed certificate is created on first start; if that is not
-// possible (no openssl) we fall back to plain HTTP, which still works for
-// watching. Delete certs/ and set NO_HTTPS=1 to stay on HTTP.
-const { generateCert, certExists, keyPath, certPath } = require("./scripts/generate-cert");
-
-let useHttps = false;
-
-if (process.env.NO_HTTPS) {
-    console.log("NO_HTTPS is set, serving plain HTTP.");
-} else if (certExists()) {
-    useHttps = true;
-} else {
-    try {
-        const { ips } = generateCert();
-        console.log("No certificate found, generated a self-signed one for:");
-        console.log(`  localhost, 127.0.0.1${ips.length ? ", " + ips.join(", ") : ""}`);
-        console.log("Browsers will warn that it is untrusted. Accept it once per device.\n");
-        useHttps = true;
-    } catch (error) {
-        console.warn("Could not generate a certificate, falling back to HTTP.");
-        console.warn(`  ${error.message.split("\n")[0]}`);
-    }
-}
-
-const main = useHttps
-    ? https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app)
-    : http.createServer(app);
-
+const main = http.createServer(app);
 const io = socketIo(main);
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -120,15 +88,9 @@ app.get("/ip", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-const scheme = useHttps ? "https" : "http";
 
 main.listen(PORT, () => {
-    console.log(`Server running on ${scheme}://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
     getLocalIPv4Addresses().forEach(ip =>
-        console.log(`Other devices on this network: ${scheme}://${ip}:${PORT}`));
-
-    if (!useHttps) {
-        console.log("\nServing plain HTTP, so only this machine can start a share.");
-        console.log("Other devices can still watch.");
-    }
+        console.log(`Other devices on this network: http://${ip}:${PORT}`));
 });
