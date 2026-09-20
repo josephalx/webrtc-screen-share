@@ -1,11 +1,26 @@
 const express = require("express");
 const http = require("http");
+const https = require("https");
+const fs = require("fs");
 const socketIo = require("socket.io");
 const os = require("os");
 const path = require("path");
 
 const app = express();
-const main = http.createServer(app);
+
+// Browsers only allow screen capture over HTTPS or on localhost. With a
+// certificate present we serve HTTPS, which lets any device on the network
+// broadcast rather than only this machine. Without one we fall back to plain
+// HTTP, which is still fine for watching. Run `npm run cert` to create one.
+const certDir = path.join(__dirname, "certs");
+const keyPath = path.join(certDir, "key.pem");
+const certPath = path.join(certDir, "cert.pem");
+const useHttps = fs.existsSync(keyPath) && fs.existsSync(certPath);
+
+const main = useHttps
+    ? https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, app)
+    : http.createServer(app);
+
 const io = socketIo(main);
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -88,9 +103,15 @@ app.get("/ip", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const scheme = useHttps ? "https" : "http";
 
 main.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on ${scheme}://localhost:${PORT}`);
     getLocalIPv4Addresses().forEach(ip =>
-        console.log(`Other devices on this network: http://${ip}:${PORT}`));
+        console.log(`Other devices on this network: ${scheme}://${ip}:${PORT}`));
+
+    if (!useHttps) {
+        console.log("\nServing plain HTTP, so only this machine can start a share.");
+        console.log("Run `npm run cert` to enable HTTPS and broadcast from any device.");
+    }
 });

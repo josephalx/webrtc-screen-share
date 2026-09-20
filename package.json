@@ -21,7 +21,8 @@
   "bin": "main.js",
   "scripts": {
     "build": "webpack",
-    "start": "node main.js"
+    "start": "node main.js",
+    "cert": "node scripts/generate-cert.js"
   },
   "keywords": [],
   "author": "",
