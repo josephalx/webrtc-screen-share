@@ -12,23 +12,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let broadcasters = {}; // Store broadcaster peer connections
 
-// Helper function to get local IPv4 address
-function getLocalIPv4Address() {
+// Helper function to get every local IPv4 address a viewer could connect to.
+// More than one can be reachable (Wi-Fi, Ethernet, VPN), so return them all
+// rather than guessing with the first match.
+function getLocalIPv4Addresses() {
     const networkInterfaces = os.networkInterfaces();
-    let localIPv4Address = null;
+    const addresses = [];
 
     for (const interfaceName in networkInterfaces) {
-        const networkInterface = networkInterfaces[interfaceName];
-        for (const alias of networkInterface) {
+        for (const alias of networkInterfaces[interfaceName]) {
             if (alias.family === "IPv4" && !alias.internal) {
-                localIPv4Address = alias.address;
-                break;
+                addresses.push(alias.address);
             }
         }
-        if (localIPv4Address) break;
     }
 
-    return localIPv4Address;
+    return addresses;
 }
 
 io.on("connection", (socket) => {
@@ -74,8 +73,12 @@ io.on("connection", (socket) => {
 
 // New route to return client's IP address
 app.get("/ip", (req, res) => {
-    const localIPv4Address = getLocalIPv4Address();
-    res.json({ ip: localIPv4Address });
+    const ips = getLocalIPv4Addresses();
+    res.json({ ip: ips[0] || null, ips });
 });
 
-main.listen(3000, () => console.log("Server running on http://localhost:3000"));
+main.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
+    getLocalIPv4Addresses().forEach(ip =>
+        console.log(`Other devices on this network: http://${ip}:3000`));
+});

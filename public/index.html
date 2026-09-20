@@ -4,9 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <title>WebRTC Screen Sharing</title>
     <style>
-        body, html {
+        :root {
+            --bg: #0b0d11;
+            --surface: #151922;
+            --surface-raised: #1d222d;
+            --border: #272d3a;
+            --text: #e8ecf4;
+            --text-dim: #949db0;
+            --accent: #4f7cff;
+            --accent-hover: #6b91ff;
+            --live: #31c76a;
+            --warn: #f0b429;
+            --error: #f2545b;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        html, body {
             margin: 0;
             padding: 0;
             height: 100%;
@@ -15,27 +39,155 @@
         body {
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            justify-content: flex-end;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* ---------- Header ---------- */
+
         #header {
-            height: 30px;
             display: flex;
-            justify-content: center;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 16px;
+            height: 52px;
+            flex: none;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .brand svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .header-right {
+            display: flex;
             align-items: center;
             gap: 10px;
         }
 
+        /* ---------- Status pill ---------- */
+
+        #status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 11px 5px 9px;
+            border-radius: 999px;
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 12.5px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        #status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex: none;
+        }
+
+        #status[data-state="connecting"] {
+            color: var(--warn);
+        }
+
+        #status[data-state="connecting"]::before {
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        #status[data-state="live"] {
+            color: var(--live);
+        }
+
+        #status[data-state="live"]::before {
+            box-shadow: 0 0 0 3px rgba(49, 199, 106, 0.18);
+        }
+
+        #status[data-state="error"] {
+            color: var(--error);
+        }
+
+        @keyframes pulse {
+            50% { opacity: 0.25; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
+        }
+
+        /* ---------- Buttons ---------- */
+
+        .btn {
+            font: inherit;
+            font-weight: 500;
+            color: var(--text);
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: 9px 16px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+        }
+
+        .btn:hover {
+            background: #262d3b;
+            border-color: #38415280;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12.5px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        /* ---------- Main stage ---------- */
+
         #main {
-            background-color: black;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: stretch;
             align-items: stretch;
+            justify-content: stretch;
             overflow: hidden;
-            padding: 10px;
-            flex: 1;
+            padding: 16px;
+            min-height: 0;
         }
 
         #startMenu {
@@ -43,29 +195,153 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 10px;
             flex: 1;
+            padding: 16px;
         }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .card h1 {
+            margin: 0 0 6px;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .card p {
+            margin: 0 0 24px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .actions .btn {
+            width: 100%;
+            padding: 11px 16px;
+        }
+
+        #message {
+            margin: 20px 0 0;
+            padding: 11px 13px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: left;
+            background: rgba(242, 84, 91, 0.1);
+            border: 1px solid rgba(242, 84, 91, 0.3);
+            color: #ffb3b7;
+        }
+
+        /* ---------- Video ---------- */
 
         #video {
             display: none;
             flex: 1;
             width: 100%;
             height: 100%;
+            min-height: 0;
+            /* Letterbox instead of stretching the captured screen out of shape. */
+            object-fit: contain;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        /* ---------- Share bar ---------- */
+
+        #shareBar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: none;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+        }
+
+        #shareBar .label {
+            color: var(--text-dim);
+            font-size: 12.5px;
+        }
+
+        #shareUrl {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            padding: 6px 11px;
+            border-radius: 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            user-select: all;
+        }
+
+        @media (max-width: 560px) {
+            #header {
+                height: auto;
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            #main {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 
 <body>
-<div id="header">
-    <div id="status"></div><button id="fullscreen">Full screen</button>
-</div>
-<div id="main">
+<header id="header">
+    <div class="brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <path d="M8 21h8M12 17v4"></path>
+        </svg>
+        Screen Share
+    </div>
+    <div class="header-right">
+        <div id="status" data-state="idle" role="status" aria-live="polite">Ready</div>
+        <button id="fullscreen" class="btn btn-small" hidden>Full screen</button>
+    </div>
+</header>
+
+<main id="main">
     <div id="startMenu">
-        <button id="startShare">Start Sharing</button>
-        <button id="watchStream">Watch Stream</button>
+        <div class="card">
+            <h1>Share your screen</h1>
+            <p>Stream this screen to any device on your network, or watch a stream someone else is sharing.</p>
+            <div class="actions">
+                <button id="startShare" class="btn btn-primary">Start Sharing</button>
+                <button id="watchStream" class="btn">Watch Stream</button>
+            </div>
+            <p id="message" hidden></p>
+        </div>
     </div>
     <video id="video" autoplay playsinline></video>
+</main>
+
+<div id="shareBar" hidden>
+    <span class="label">Open on another device:</span>
+    <span id="shareUrl"></span>
+    <button id="copyUrl" class="btn btn-small">Copy</button>
 </div>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
@@ -81,24 +357,113 @@
     const fullscreenButton = document.getElementById("fullscreen");
     const startMenu = document.getElementById("startMenu");
     const statusElement = document.getElementById("status");
+    const messageElement = document.getElementById("message");
+    const shareBar = document.getElementById("shareBar");
+    const shareUrlElement = document.getElementById("shareUrl");
+    const copyUrlButton = document.getElementById("copyUrl");
 
-    async function getLocalIPv4() {
+    // Short label for the header pill. State drives its colour: idle, connecting,
+    // live or error.
+    function setStatus(text, state) {
+        statusElement.textContent = text;
+        statusElement.dataset.state = state || "idle";
+    }
+
+    // Longer explanations stay in the card, where there is room to read them.
+    function showMessage(text) {
+        messageElement.textContent = text;
+        messageElement.hidden = !text;
+    }
+
+    function showStage() {
+        startMenu.hidden = true;
+        videoElement.style.display = "block";
+        fullscreenButton.hidden = false;
+    }
+
+    function showMenu() {
+        startMenu.hidden = false;
+        videoElement.style.display = "none";
+        fullscreenButton.hidden = true;
+        shareBar.hidden = true;
+    }
+
+    async function getLocalIPv4Addresses() {
         const response = await fetch("/ip");
         const data = await response.json();
-        return data.ip;
+        return data.ips || (data.ip ? [data.ip] : []);
+    }
+
+    // The default WebRTC bitrate ceiling is far too low for a full desktop, so the
+    // encoder blurs detail to stay under it. Must run after setLocalDescription,
+    // which is when the encodings are populated.
+    async function raiseVideoQuality(peerConnection) {
+        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
+        if (!sender) return;
+
+        const params = sender.getParameters();
+        if (!params.encodings || !params.encodings.length) {
+            console.warn("No encodings to tune yet; using browser defaults.");
+            return;
+        }
+
+        params.encodings[0].maxBitrate = 8_000_000; // 8 Mbps
+        params.encodings[0].maxFramerate = 30;
+        // Keep pixels, sacrifice smoothness. Ignored by browsers that lack it.
+        params.degradationPreference = "maintain-resolution";
+
+        try {
+            await sender.setParameters(params);
+            console.log("Video sender tuned:", sender.getParameters().encodings[0]);
+        } catch (error) {
+            console.warn("Could not tune video sender:", error);
+        }
     }
 
     async function handleStartSharing() {
+        // Screen capture needs a secure context: https, or http on localhost only.
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+            setStatus("Unavailable", "error");
+            showMessage("Screen sharing needs HTTPS or localhost. Share from the host machine at http://localhost:3000, and use this page only to watch.");
+            return;
+        }
+
+        showMessage("");
+
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    width: { ideal: 1920, max: 3840 },
+                    height: { ideal: 1080, max: 2160 },
+                    frameRate: { ideal: 30, max: 60 }
+                }
+            });
+
+            // Screen content is detailed and mostly static. This tells the encoder
+            // to drop frame rate rather than resolution when it runs out of
+            // bitrate; without it Safari downscales and the result looks blurry.
+            stream.getVideoTracks().forEach(track => {
+                track.contentHint = "detail";
+                const s = track.getSettings();
+                console.log(`Capturing at ${s.width}x${s.height} @ ${s.frameRate}fps`);
+            });
+
             videoElement.srcObject = stream;
+            showStage();
+            setStatus("Sharing", "live");
 
-            // Hide start menu and show video
-            startMenu.style.display = "none";
-            videoElement.style.display = "block";
+            const ips = await getLocalIPv4Addresses();
+            shareUrlElement.textContent = ips.length
+                ? ips.map(ip => `http://${ip}:${port}`).join("  or  ")
+                : "No network address found for this machine.";
+            copyUrlButton.hidden = !ips.length;
+            shareBar.hidden = false;
 
-            const ip = await getLocalIPv4();
-            statusElement.innerText = `Sharing... Connect on another device using this IP: http://${ip}:${port}`;
+            // Sharing ends when the user stops it from the browser's own control.
+            stream.getVideoTracks()[0].addEventListener("ended", () => {
+                setStatus("Ready", "idle");
+                showMenu();
+            });
 
             socket.emit("broadcaster");
 
@@ -114,9 +479,10 @@
                     }
                 };
 
-                peerConnection.createOffer().then(offer => {
-                    peerConnection.setLocalDescription(offer);
-                    socket.emit("offer", id, offer);
+                peerConnection.createOffer().then(async offer => {
+                    await peerConnection.setLocalDescription(offer);
+                    await raiseVideoQuality(peerConnection);
+                    socket.emit("offer", id, peerConnection.localDescription);
                 });
             });
 
@@ -125,10 +491,12 @@
             });
 
             socket.on("candidate", (id, candidate) => {
-                peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
+                if (!peerConnections[id]) return;
+                peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate))
+                    .catch(err => console.error("Failed to add candidate:", err));
             });
 
-            socket.on("broadcasterDisconnect", (id) => {
+            socket.on("broadcaster-disconnect", (id) => {
                 if (peerConnections[id]) {
                     peerConnections[id].close();
                     delete peerConnections[id];
@@ -137,13 +505,16 @@
 
         } catch (error) {
             console.error("Error starting sharing:", error);
+            setStatus("Ready", "idle");
+            showMessage(`Could not start sharing: ${error.message}`);
+            showMenu();
         }
     }
 
     function handleWatchStream() {
-        startMenu.style.display = "none";
-        videoElement.style.display = "block";
-        statusElement.innerText = "Loading...";
+        showMessage("");
+        showStage();
+        setStatus("Connecting", "connecting");
 
         console.log("Requesting to watch stream...");
         socket.emit("watcher");
@@ -151,28 +522,62 @@
         const peerConnection = new RTCPeerConnection(config);
         peerConnections["broadcaster"] = peerConnection;
 
+        // The broadcaster's socket id is only known once its offer arrives, so
+        // candidates found before that are queued instead of being sent nowhere.
+        let broadcasterId = null;
+        const pendingCandidates = [];
+
         peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit("candidate", "broadcaster", event.candidate);
+            if (!event.candidate) return;
+            if (broadcasterId) {
+                socket.emit("candidate", broadcasterId, event.candidate);
+            } else {
+                pendingCandidates.push(event.candidate);
             }
         };
 
         peerConnection.ontrack = event => {
             console.log("Receiving stream from broadcaster...");
             videoElement.srcObject = event.streams[0];
-            statusElement.innerText = "Watching stream";
+            setStatus("Watching", "live");
+        };
+
+        peerConnection.oniceconnectionstatechange = () => {
+            console.log("ICE connection state:", peerConnection.iceConnectionState);
+            if (peerConnection.iceConnectionState === "failed") {
+                setStatus("Connection failed", "error");
+            }
         };
 
         socket.on("offer", async (id, offer) => {
             console.log(`Received offer from ${id}`);
+            broadcasterId = id;
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             socket.emit("answer", id, answer);
+
+            while (pendingCandidates.length) {
+                socket.emit("candidate", id, pendingCandidates.shift());
+            }
         });
 
         socket.on("candidate", (id, candidate) => {
-            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+                .catch(err => console.error("Failed to add candidate:", err));
+        });
+
+        // A viewer that arrived before the broadcaster gets no offer, so ask again
+        // as soon as one starts sharing.
+        socket.on("broadcaster", () => {
+            if (!broadcasterId) {
+                console.log("Broadcaster available, requesting stream again...");
+                socket.emit("watcher");
+            }
+        });
+
+        socket.on("broadcaster-disconnect", () => {
+            setStatus("Disconnected", "error");
         });
     }
 
@@ -188,9 +593,24 @@
         }
     }
 
+    async function handleCopyUrl() {
+        try {
+            await navigator.clipboard.writeText(shareUrlElement.textContent);
+            copyUrlButton.textContent = "Copied";
+            setTimeout(() => { copyUrlButton.textContent = "Copy"; }, 1500);
+        } catch (error) {
+            // clipboard is unavailable outside a secure context; the span is
+            // select-all so the address can still be copied by hand.
+            console.warn("Clipboard unavailable:", error);
+            copyUrlButton.textContent = "Select it";
+            setTimeout(() => { copyUrlButton.textContent = "Copy"; }, 1500);
+        }
+    }
+
     startShareButton.onclick = handleStartSharing;
     watchStreamButton.onclick = handleWatchStream;
     fullscreenButton.onclick = handleFullScreen;
+    copyUrlButton.onclick = handleCopyUrl;
 
 </script>
 </body>
