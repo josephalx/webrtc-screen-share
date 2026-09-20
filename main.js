@@ -129,6 +129,6 @@ main.listen(PORT, () => {
 
     if (!useHttps) {
         console.log("\nServing plain HTTP, so only this machine can start a share.");
-        console.log("Run `npm run cert` to enable HTTPS and broadcast from any device.");
+        console.log("Other devices can still watch.");
     }
 });

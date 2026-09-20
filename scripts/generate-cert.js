@@ -84,8 +84,13 @@ function generateCert() {
             "-config", configPath,
             "-extensions", "v3_req"
         ], { stdio: ["ignore", "ignore", "pipe"] });
+    } catch (error) {
+        // Don't leave a half-built certs/ behind; its presence is what tells the
+        // server on the next start that a usable certificate exists.
+        fs.rmSync(certDir, { recursive: true, force: true });
+        throw error;
     } finally {
-        fs.unlinkSync(configPath);
+        if (fs.existsSync(configPath)) fs.unlinkSync(configPath);
     }
 
     return { keyPath, certPath, ips };

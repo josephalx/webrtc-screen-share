@@ -2,7 +2,10 @@
   "name": "webrtc-screen-share",
   "target": "node",
   "pkg": {
-    "scripts": "*.js",
+    "scripts": [
+      "*.js",
+      "scripts/*.js"
+    ],
     "assets": [
       "./public/index.html"
     ],
