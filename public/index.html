@@ -177,6 +177,79 @@
             border-color: var(--accent-hover);
         }
 
+        /* ---------- Toolbar ---------- */
+
+        /* Related actions sit in one bordered group; the buttons inside are flat
+           so the group, not each button, carries the outline. */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* A group whose buttons are all hidden would be an empty pill. */
+        .btn-group:not(:has(> .tool-btn:not([hidden]))) {
+            display: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 2px;
+            padding: 3px;
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font: inherit;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: var(--text);
+            background: transparent;
+            border: none;
+            border-radius: 7px;
+            padding: 5px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .tool-btn svg {
+            width: 15px;
+            height: 15px;
+            flex: none;
+            color: var(--text-dim);
+            transition: color 0.15s ease;
+        }
+
+        .tool-btn:hover {
+            background: #2a3140;
+        }
+
+        .tool-btn:hover svg {
+            color: var(--text);
+        }
+
+        .tool-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+
+        .tool-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+            background: transparent;
+        }
+
+        /* Brief confirmation after a capture ("Saved", "Copied"). */
+        .tool-btn.is-done svg {
+            color: var(--live);
+        }
+
         /* ---------- Main stage ---------- */
 
         #main {
@@ -247,8 +320,21 @@
 
         /* ---------- Video ---------- */
 
+        #stage {
+            position: relative;
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Toggled from script on fullscreenchange, which avoids the prefixed
+           :fullscreen selectors that some browsers reject outright. */
+        #stage.is-fullscreen {
+            background: #000;
+        }
+
         #video {
-            display: none;
+            display: block;
             flex: 1;
             width: 100%;
             height: 100%;
@@ -258,6 +344,51 @@
             background: #000;
             border: 1px solid var(--border);
             border-radius: var(--radius);
+        }
+
+        #stage.is-fullscreen #video {
+            border: none;
+            border-radius: 0;
+        }
+
+        /* Floating controls, only shown while the stage is full screen or popped
+           out. A solid dark bar keeps them readable over any picture. */
+        .overlay-controls {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(11, 13, 17, 0.82);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0.8;
+            transition: opacity 0.15s ease;
+        }
+
+        .overlay-controls:hover,
+        .overlay-controls:focus-within {
+            opacity: 1;
+        }
+
+        /* Inside the picture-in-picture window the stage is the whole page. */
+        #stage.is-pip {
+            height: 100vh;
+            background: #000;
+        }
+
+        #stage.is-pip #video {
+            border: none;
+            border-radius: 0;
+        }
+
+        #stage.is-pip .overlay-controls {
+            top: 8px;
+            right: 8px;
+        }
+
+        #stage:not(.is-fullscreen):not(.is-pip) .overlay-controls {
+            display: none;
         }
 
         /* ---------- Share bar ---------- */
@@ -294,6 +425,43 @@
                 height: auto;
                 padding: 10px 12px;
                 flex-wrap: wrap;
+                row-gap: 10px;
+            }
+
+            /* Brand and status share the first row; the toolbar takes a full
+               row of its own with equal-width buttons, icon above label. */
+            .header-right {
+                display: contents;
+            }
+
+            #status {
+                margin-left: auto;
+            }
+
+            #header .toolbar {
+                order: 1;
+                flex-basis: 100%;
+            }
+
+            #header .toolbar:not(:has(.tool-btn:not([hidden]))) {
+                display: none;
+            }
+
+            #header .btn-group {
+                flex: 1;
+            }
+
+            #header .btn-group .tool-btn {
+                flex: 1;
+                flex-direction: column;
+                gap: 3px;
+                padding: 6px 4px;
+                font-size: 11.5px;
+            }
+
+            #header .btn-group .tool-btn svg {
+                width: 18px;
+                height: 18px;
             }
 
             .card {
@@ -319,7 +487,46 @@
     </div>
     <div class="header-right">
         <div id="status" data-state="idle" role="status" aria-live="polite">Ready</div>
-        <button id="fullscreen" class="btn btn-small" hidden>Full screen</button>
+        <button id="unmute" class="btn btn-small btn-primary" hidden>Unmute</button>
+        <div class="toolbar">
+            <!-- Capture the current frame -->
+            <div class="btn-group" role="group" aria-label="Capture">
+                <button id="screenshot" class="tool-btn" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span class="btn-label">Screenshot</span>
+                </button>
+                <button id="copyImage" class="tool-btn" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <span class="btn-label">Copy</span>
+                </button>
+            </div>
+            <!-- Change how the stream is viewed -->
+            <div class="btn-group" role="group" aria-label="View">
+                <button id="popOut" class="tool-btn" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <rect x="12" y="12" width="7" height="5" rx="1"></rect>
+                    </svg>
+                    <span class="btn-label">Pop out</span>
+                </button>
+                <button id="fullscreen" class="tool-btn" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                    </svg>
+                    <span class="btn-label">Full screen</span>
+                </button>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -335,13 +542,39 @@
             <p id="message" hidden></p>
         </div>
     </div>
-    <video id="video" autoplay playsinline></video>
+    <!-- Full screen targets this wrapper rather than the video, so the overlay
+         controls stay visible on top of the picture. -->
+    <div id="stage" hidden>
+        <video id="video" autoplay playsinline></video>
+        <div class="btn-group overlay-controls" role="group" aria-label="Capture">
+            <button id="fsScreenshot" class="tool-btn" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span class="btn-label">Screenshot</span>
+            </button>
+            <button id="fsCopyImage" class="tool-btn" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="btn-label">Copy</span>
+            </button>
+        </div>
+    </div>
 </main>
 
 <div id="shareBar" hidden>
     <span class="label">Open on another device:</span>
     <span id="shareUrl"></span>
     <button id="copyUrl" class="btn btn-small">Copy</button>
+    <span id="audioNote" class="label" hidden>
+        No audio is being shared. Use Chrome or Edge, share a tab, and tick "Share tab audio".
+        Safari and Firefox cannot share audio.
+    </span>
 </div>
 
 <!-- Served by our own socket.io, so the page works on a network with no internet
@@ -362,6 +595,58 @@
     const shareBar = document.getElementById("shareBar");
     const shareUrlElement = document.getElementById("shareUrl");
     const copyUrlButton = document.getElementById("copyUrl");
+    const unmuteButton = document.getElementById("unmute");
+    const screenshotButton = document.getElementById("screenshot");
+    const stageElement = document.getElementById("stage");
+    const fsScreenshotButton = document.getElementById("fsScreenshot");
+    // Header and full-screen overlay copies, kept in step.
+    const screenshotButtons = [screenshotButton, fsScreenshotButton];
+    const copyImageButtons = [
+        document.getElementById("copyImage"),
+        document.getElementById("fsCopyImage")
+    ];
+    // Writing images to the clipboard is only allowed on secure pages.
+    const canCopyImage = window.isSecureContext && !!(navigator.clipboard && navigator.clipboard.write)
+        && typeof ClipboardItem !== "undefined";
+
+    if (!canCopyImage) {
+        copyImageButtons.forEach(b => {
+            b.title = "Copying images needs a secure page (HTTPS or localhost). Use Screenshot to save the frame instead.";
+        });
+    }
+
+    const popOutButton = document.getElementById("popOut");
+    // Document Picture-in-Picture (Chrome/Edge 116+) can host our own HTML,
+    // unlike the plain video PiP window, which only has the browser's controls.
+    // It only exists on secure pages, so a viewer on http://<LAN IP> falls back
+    // to the plain video PiP (no screenshot button) and is told why.
+    const canPopOut = "documentPictureInPicture" in window;
+    const canBasicPip = !!document.pictureInPictureEnabled;
+    let pipWindow = null;
+
+    // Buttons hold an icon, so only their label span is ever rewritten.
+    function setLabel(button, text) {
+        button.querySelector(".btn-label").textContent = text;
+    }
+
+    if (!canPopOut) {
+        // Document PiP is desktop-only, so on phones no address or flag helps.
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        // Phones are always basic, so the qualifier would just crowd their toolbar.
+        if (!isMobile) setLabel(popOutButton, "Pop out (basic)");
+        popOutButton.title = isMobile
+            ? "Phones can only pop out the video itself. Use the Screenshot button on the page to capture a frame."
+            : window.isSecureContext
+                ? "This browser can only pop out the video itself. Use desktop Chrome or Edge 116+ for a Screenshot button in the pop-out window."
+                : "Pop-out with a Screenshot button needs a secure page (HTTPS or localhost). On this address only the video can be popped out.";
+    }
+
+    // Called when the viewer starts or stops receiving video.
+    function setScreenshotAvailable(available) {
+        screenshotButtons.forEach(b => { b.hidden = !available; });
+        copyImageButtons.forEach(b => { b.hidden = !available; });
+        popOutButton.hidden = !(available && (canPopOut || canBasicPip));
+    }
 
     // Short label for the header pill. State drives its colour: idle, connecting,
     // live or error.
@@ -378,14 +663,17 @@
 
     function showStage() {
         startMenu.hidden = true;
-        videoElement.style.display = "block";
+        stageElement.hidden = false;
         fullscreenButton.hidden = false;
     }
 
     function showMenu() {
         startMenu.hidden = false;
-        videoElement.style.display = "none";
+        stageElement.hidden = true;
         fullscreenButton.hidden = true;
+        unmuteButton.hidden = true;
+        setScreenshotAvailable(false);
+        if (pipWindow) pipWindow.close();
         shareBar.hidden = true;
         setControlsBusy(false);
     }
@@ -455,8 +743,23 @@
                     width: { ideal: 1920, max: 3840 },
                     height: { ideal: 1080, max: 2160 },
                     frameRate: { ideal: 30, max: 60 }
-                }
+                },
+                // Voice-call processing mangles music and video soundtracks, so
+                // turn it off. Browsers that cannot capture audio (Safari,
+                // Firefox) just return a video-only stream.
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                },
+                // Chrome hint to offer "Share system audio" for whole screens.
+                systemAudio: "include"
             });
+
+            const audioTracks = stream.getAudioTracks();
+            console.log(audioTracks.length
+                ? `Capturing audio: ${audioTracks[0].label}`
+                : "No audio captured (not ticked in the picker, or unsupported here).");
 
             // Screen content is detailed and mostly static. This tells the encoder
             // to drop frame rate rather than resolution when it runs out of
@@ -467,15 +770,19 @@
                 console.log(`Capturing at ${s.width}x${s.height} @ ${s.frameRate}fps`);
             });
 
+            // The sharer already hears the audio from its source; playing the
+            // preview too would double it and feed back into the capture.
+            videoElement.muted = true;
             videoElement.srcObject = stream;
             showStage();
-            setStatus("Sharing", "live");
+            setStatus(audioTracks.length ? "Sharing with audio" : "Sharing", "live");
 
             const ips = await getLocalIPv4Addresses();
             shareUrlElement.textContent = ips.length
                 ? ips.map(shareUrlFor).join("  or  ")
                 : "No network address found for this machine.";
             copyUrlButton.hidden = !ips.length;
+            document.getElementById("audioNote").hidden = audioTracks.length > 0;
             shareBar.hidden = false;
 
             // Sharing ends when the user stops it from the browser's own control.
@@ -560,9 +867,17 @@
             }
         };
 
+        // Fires once per track (video, then audio if shared). Both belong to the
+        // same stream, so only attach it once to avoid restarting playback.
         peerConnection.ontrack = event => {
-            console.log("Receiving stream from broadcaster...");
-            videoElement.srcObject = event.streams[0];
+            console.log(`Receiving ${event.track.kind} from broadcaster...`);
+            const stream = event.streams[0];
+            if (videoElement.srcObject !== stream) {
+                videoElement.muted = false;
+                videoElement.srcObject = stream;
+            }
+            playWithSound();
+            if (event.track.kind === "video") setScreenshotAvailable(true);
             setStatus("Watching", "live");
         };
 
@@ -577,6 +892,14 @@
             console.log(`Received offer from ${id}`);
             broadcasterId = id;
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+            // The offer only carries an audio section if the sharer captured
+            // audio, so this tells the viewer which side is missing it.
+            const hasAudio = peerConnection.getTransceivers()
+                .some(t => t.receiver.track && t.receiver.track.kind === "audio");
+            console.log(hasAudio ? "Stream includes audio." : "Stream has no audio: the sharer did not capture any.");
+            if (!hasAudio) setStatus("Watching · no audio", "live");
+
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             socket.emit("answer", id, answer);
@@ -607,17 +930,175 @@
         });
     }
 
-    function handleFullScreen() {
-        if (videoElement.requestFullscreen) {
-            videoElement.requestFullscreen().catch(err => console.log("Full-screen request failed:", err));
-        } else if (videoElement.webkitRequestFullscreen) {
-            videoElement.webkitRequestFullscreen(); // Safari
-        } else if (videoElement.mozRequestFullScreen) {
-            videoElement.mozRequestFullScreen(); // Firefox
-        } else if (videoElement.msRequestFullscreen) {
-            videoElement.msRequestFullscreen(); // IE/Edge
+    // Autoplay policies (Safari and iOS especially) can refuse to start media
+    // with sound when the Watch click was too long ago. Fall back to muted
+    // playback so the picture still shows, and let the viewer opt in to sound.
+    async function playWithSound() {
+        try {
+            await videoElement.play();
+            unmuteButton.hidden = true;
+        } catch (error) {
+            if (error.name !== "NotAllowedError") return;
+            console.warn("Autoplay with sound blocked, playing muted:", error);
+            videoElement.muted = true;
+            unmuteButton.hidden = false;
+            videoElement.play().catch(err => console.warn("Muted playback failed:", err));
         }
     }
+
+    function handleUnmute() {
+        videoElement.muted = false;
+        playWithSound();
+    }
+
+    // Grab the frame currently on screen at the stream's real resolution (not
+    // the letterboxed size of the element) as a PNG blob.
+    function captureFrame() {
+        return new Promise((resolve, reject) => {
+            const { videoWidth: width, videoHeight: height } = videoElement;
+            if (!width || !height) {
+                reject(new Error("No video frame to capture yet."));
+                return;
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(videoElement, 0, 0, width, height);
+            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Could not encode frame.")), "image/png");
+        });
+    }
+
+    // "done" tints the icon green for a successful capture; failures leave it.
+    function flashLabel(buttons, text, restore, done) {
+        buttons.forEach(b => {
+            setLabel(b, text);
+            b.classList.toggle("is-done", !!done);
+        });
+        setTimeout(() => buttons.forEach(b => {
+            setLabel(b, restore);
+            b.classList.remove("is-done");
+        }), 1500);
+    }
+
+    async function handleScreenshot() {
+        let blob;
+        try {
+            blob = await captureFrame();
+        } catch (error) {
+            console.warn(error.message);
+            return;
+        }
+
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `screenshot-${stamp}.png`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+
+        flashLabel(screenshotButtons, "Saved", "Screenshot", true);
+    }
+
+    // Puts the frame on the clipboard as a PNG so it can be pasted into a chat.
+    async function handleCopyImage() {
+        if (!canCopyImage) {
+            console.warn(copyImageButtons[0].title);
+            flashLabel(copyImageButtons, "Needs HTTPS", "Copy");
+            return;
+        }
+
+        try {
+            // Safari only accepts the write if the ClipboardItem is created
+            // inside the click, so hand it the pending blob rather than awaiting.
+            // Clipboard writes need a focused document; inside the pop-out that
+            // is the PiP window, not this page.
+            const win = pipWindow || window;
+            await win.navigator.clipboard.write([new win.ClipboardItem({ "image/png": captureFrame() })]);
+            flashLabel(copyImageButtons, "Copied", "Copy", true);
+        } catch (error) {
+            console.warn("Could not copy frame:", error);
+            flashLabel(copyImageButtons, "Copy failed", "Copy");
+        }
+    }
+
+    function handleFullScreen() {
+        if (stageElement.requestFullscreen) {
+            stageElement.requestFullscreen().catch(err => console.log("Full-screen request failed:", err));
+        } else if (stageElement.webkitRequestFullscreen) {
+            stageElement.webkitRequestFullscreen(); // Older Safari, iPad
+        } else if (videoElement.webkitEnterFullscreen) {
+            // iPhone only allows the native video player to go full screen, so
+            // the overlay cannot be shown there; the header button still works.
+            videoElement.webkitEnterFullscreen();
+        }
+    }
+
+    // Move the whole stage (video plus overlay button) into an always-on-top
+    // window, and put it back when that window closes.
+    async function handlePopOut() {
+        if (!canPopOut) {
+            console.warn(popOutButton.title);
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await videoElement.requestPictureInPicture();
+                }
+            } catch (error) {
+                console.warn("Could not open picture-in-picture:", error);
+            }
+            return;
+        }
+
+        if (pipWindow) {
+            pipWindow.close();
+            return;
+        }
+
+        try {
+            pipWindow = await documentPictureInPicture.requestWindow({
+                width: Math.round(videoElement.clientWidth / 2) || 480,
+                height: Math.round(videoElement.clientHeight / 2) || 270
+            });
+        } catch (error) {
+            console.warn("Could not open picture-in-picture window:", error);
+            return;
+        }
+
+        // The new window starts blank, so give it our styles.
+        const style = pipWindow.document.createElement("style");
+        style.textContent = [...document.styleSheets]
+            .map(sheet => [...sheet.cssRules].map(rule => rule.cssText).join("\n"))
+            .join("\n");
+        pipWindow.document.head.append(style);
+        pipWindow.document.title = "Screen Share";
+
+        stageElement.classList.add("is-pip");
+        pipWindow.document.body.append(stageElement);
+        setLabel(popOutButton, "Pop in");
+        // The stage now lives in the other window, so full screen has nothing to act on.
+        fullscreenButton.disabled = true;
+        // Moving a media element between documents can pause it.
+        videoElement.play().catch(() => {});
+
+        pipWindow.addEventListener("pagehide", () => {
+            stageElement.classList.remove("is-pip");
+            document.getElementById("main").append(stageElement);
+            videoElement.play().catch(() => {});
+            setLabel(popOutButton, "Pop out");
+            fullscreenButton.disabled = false;
+            pipWindow = null;
+        });
+    }
+
+    function syncFullscreenState() {
+        const current = document.fullscreenElement || document.webkitFullscreenElement;
+        stageElement.classList.toggle("is-fullscreen", current === stageElement);
+    }
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 
     async function handleCopyUrl() {
         try {
@@ -637,6 +1118,11 @@
     watchStreamButton.onclick = handleWatchStream;
     fullscreenButton.onclick = handleFullScreen;
     copyUrlButton.onclick = handleCopyUrl;
+    unmuteButton.onclick = handleUnmute;
+    screenshotButton.onclick = handleScreenshot;
+    fsScreenshotButton.onclick = handleScreenshot;
+    copyImageButtons.forEach(b => { b.onclick = handleCopyImage; });
+    popOutButton.onclick = handlePopOut;
 
 </script>
 </body>

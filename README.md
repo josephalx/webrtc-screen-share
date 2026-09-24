@@ -50,13 +50,87 @@ A simple WebRTC application for screen sharing between two or more web browsers.
     > you open the `192.168.x.x` address instead, "Start Sharing" will refuse to
     > run. Watching a stream has no such restriction.
 
-3.  Click **Start Sharing** and choose a screen or window.
+3.  Click **Start Sharing** and choose a screen, window or tab. To include
+    sound, turn on the audio toggle in the picker; see
+    [Sharing audio](#sharing-audio).
 
 4.  A bar appears at the bottom with the address for other devices, and a button
     to copy it. Open that address on another computer, tablet or phone on the
     same network.
 
 5.  Click **Watch Stream** to view the shared screen.
+
+### Sharing audio
+
+Audio is sent along with the screen whenever the browser captures it. Only
+Chrome and Edge can capture audio from a screen share, and only for some
+choices in the picker:
+
+| Picker choice  | Audio                                                               |
+| -------------- | ------------------------------------------------------------------- |
+| **Chrome Tab** | Yes, with **Also share tab audio** on. The most reliable option.    |
+| **Entire Screen** | Yes, with **Also share system audio** on. Windows, ChromeOS and recent macOS. |
+| **Window**     | Never.                                                              |
+
+Safari and Firefox share video only, but can watch a stream with sound.
+
+The sharer's status shows **Sharing with audio** when sound is being captured.
+If it just says **Sharing**, a note in the bottom bar explains that no audio is
+included. The viewer's status shows **Watching · no audio** in the same case.
+
+On macOS, if the Entire Screen tab has no audio toggle, allow Chrome under
+**System Settings → Privacy & Security → Screen & System Audio Recording**
+and restart it.
+
+If the viewer's browser blocks sound from playing automatically, the video
+starts muted and an **Unmute** button appears in the header.
+
+### Viewer tools
+
+While watching, the header has:
+
+-   **Screenshot**: saves the current frame as a PNG, at the stream's full
+    resolution.
+-   **Copy**: puts the current frame on the clipboard as a PNG, ready to paste
+    into a chat. Needs a secure page; see below.
+-   **Pop out**: moves the video into a small always-on-top window.
+-   **Full screen**: fills the screen with the video.
+
+In full screen and in the pop-out window, **Screenshot** and **Copy** float in
+the top-right corner.
+
+The pop-out window with those buttons uses Document Picture-in-Picture, which
+only desktop Chrome and Edge (116+) support on a secure page. Everywhere else
+the button falls back to **Pop out (basic)**: the video floats, but the
+browser only shows its own controls. On phones the button just says **Pop out**
+and is always the basic version.
+
+### Using the network address as a secure page
+
+Browsers only allow screen sharing, **Copy** and the full pop-out window on a
+secure page: HTTPS or `localhost`. The network address
+(`http://192.168.x.x:3000`) doesn't count, so on other devices **Copy** shows
+**Needs HTTPS** and the pop-out is basic.
+
+For testing on a home network, Chrome can be told to treat that address as
+secure. On each device:
+
+1.  Open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`.
+2.  Enter the address exactly as the server prints it, with `http://` and the
+    port and no trailing slash, for example `http://192.168.1.42:3000`.
+3.  Set it to **Enabled** and click **Relaunch**.
+
+This unlocks:
+
+| Device                  | Copy     | Full pop-out | Start Sharing |
+| ----------------------- | -------- | ------------ | ------------- |
+| Desktop Chrome or Edge  | Yes      | Yes          | Yes           |
+| Chrome on Android       | Yes      | No, basic only | No          |
+
+If the host machine gets a new IP address, update the flag to match. The flag
+only affects the address you list, but the page is still sent unencrypted, so
+avoid it on networks you don't trust. The video and audio themselves are always
+encrypted by WebRTC.
 
 ### Sharing across different networks (using ngrok)
 
@@ -103,7 +177,9 @@ This application uses WebRTC (Web Real-Time Communication) to establish a peer-t
     traffic (many guest and corporate Wi-Fi networks), connections will fail
     unless you add a TURN server to the `iceServers` list in `public/index.html`.
 -   WebRTC performance can be affected by network conditions.
--   This is a basic implementation and can be extended with features like audio sharing, chat, and more.
+-   This is a basic implementation and can be extended with features like chat, and more.
+-   VS Code's built-in browser can't share the screen or use the full pop-out
+    window. Open the page in Chrome or Edge instead.
 -   For security, ensure you're using HTTPS in production. ngrok uses HTTPS, so it is a good option for testing across networks.
 -   Ensure that the devices that are trying to connect are on the same local network, or that they are connecting via a method that allows them to communicate with each other, such as ngrok.
 
